@@ -101,7 +101,7 @@ class Videorecorder
      */
     private function dispatch(Event $event, $eventName = null)
     {
-        if (class_exists('Symfony\Component\EventDispatcher\Event')) {
+        if (class_exists('Symfony\Contracts\EventDispatcher\Event')) {
             return $this->getEventDispatcher()->dispatch($event, $eventName);
         }
 
