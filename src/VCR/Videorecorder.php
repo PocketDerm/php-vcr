@@ -99,9 +99,13 @@ class Videorecorder
      * @param Event $event The event to pass to the event handlers/listeners.
      * @return Event
      */
-    private function dispatch($eventName, Event $event = null)
+    private function dispatch(Event $event, $eventName = null)
     {
-        return $this->getEventDispatcher()->dispatch($event, $eventName);
+        if (class_exists('Symfony\Component\EventDispatcher\Event')) {
+            return $this->getEventDispatcher()->dispatch($event, $eventName);
+        }
+
+        return $this->getEventDispatcher()->dispatch($eventName, $event);
     }
 
     /**
@@ -218,14 +222,14 @@ class Videorecorder
         }
 
         $event = new BeforePlaybackEvent($request, $this->cassette);
-        $this->dispatch(VCREvents::VCR_BEFORE_PLAYBACK, $event);
+        $this->dispatch($event, VCREvents::VCR_BEFORE_PLAYBACK);
 
         $response = $this->cassette->playback($request);
 
         // Playback succeeded and the recorded response can be returned.
         if (!empty($response)) {
             $event = new AfterPlaybackEvent($request, $response, $this->cassette);
-            $this->dispatch(VCREvents::VCR_AFTER_PLAYBACK, $event);
+            $this->dispatch($event, VCREvents::VCR_AFTER_PLAYBACK);
             return $response;
         }
 
@@ -248,11 +252,11 @@ class Videorecorder
 
         $this->disableLibraryHooks();
 
-        $this->dispatch(VCREvents::VCR_BEFORE_HTTP_REQUEST, new BeforeHttpRequestEvent($request));
+        $this->dispatch(new BeforeHttpRequestEvent($request), VCREvents::VCR_BEFORE_HTTP_REQUEST);
         $response = $this->client->send($request);
-        $this->dispatch(VCREvents::VCR_AFTER_HTTP_REQUEST, new AfterHttpRequestEvent($request, $response));
+        $this->dispatch(new AfterHttpRequestEvent($request, $response), VCREvents::VCR_AFTER_HTTP_REQUEST);
 
-        $this->dispatch(VCREvents::VCR_BEFORE_RECORD, new BeforeRecordEvent($request, $response, $this->cassette));
+        $this->dispatch(new BeforeRecordEvent($request, $response, $this->cassette), VCREvents::VCR_BEFORE_RECORD);
         $this->cassette->record($request, $response);
         $this->enableLibraryHooks();
 
