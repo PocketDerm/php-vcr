@@ -15,10 +15,16 @@ class CassetteTest extends \PHPUnit_Framework_TestCase
      */
     private $cassette;
 
+    /**
+     * @var Storage\Yaml
+     */
+    private $storage;
+
     public function setUp()
     {
         vfsStream::setup('test');
-        $this->cassette = new Cassette('test', new Configuration(), new Storage\Yaml(vfsStream::url('test/'), 'json_test'));
+        $this->storage = new Storage\Yaml(vfsStream::url('test/'), 'json_test');
+        $this->cassette = new Cassette('test', new Configuration(), $this->storage);
     }
 
     public function testInvalidCassetteName()
@@ -40,7 +46,7 @@ class CassetteTest extends \PHPUnit_Framework_TestCase
         $this->cassette->record($request, $response1);
         $this->cassette->record($request, $response2);
 
-        $this->resetIndex();
+        $this->storage->rewind();
 
         $this->assertEquals($response1->toArray(), $this->cassette->playback($request)->toArray());
         $this->assertEquals($response2->toArray(), $this->cassette->playback($request)->toArray());
@@ -52,7 +58,7 @@ class CassetteTest extends \PHPUnit_Framework_TestCase
         $response = new Response(200, array(), 'sometest');
         $this->cassette->record($request, $response);
 
-        $this->resetIndex();
+        $this->storage->rewind();
 
         $this->assertEquals($response->toArray(), $this->cassette->playback($request)->toArray());
     }
@@ -70,13 +76,8 @@ class CassetteTest extends \PHPUnit_Framework_TestCase
         $response = new Response(200, array(), 'sometest');
         $this->cassette->record($request, $response);
 
-        $this->resetIndex();
+        $this->storage->rewind();
 
         $this->assertTrue($this->cassette->hasResponse($request), 'Expected true if request was found.');
-    }
-
-    private function resetIndex()
-    {
-        $this->cassette->resetIndex();
     }
 }
